@@ -24,14 +24,17 @@ module "vnet" {
   vnet_name = var.vnet_name
   resource_group_name = azurerm_resource_group.ojs_rg.name
   address_space       = var.vnet_address_space
-  # subnet_prefixes     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   subnet_prefixes     = [var.web_subnet_address[0], var.app_subnet_address[0], var.db_subnet_address[0], var.bastion_subnet_address[0]]
-
-  # subnet_names        = ["subnet1", "subnet2", "subnet3"]
+  # not sure why but sorted in alphabetical order
   subnet_names        = [var.web_subnet_name, var.app_subnet_name, var.db_subnet_name, var.bastion_subnet_name]
   subnet_service_endpoints = {
-    subnet3 = ["Microsoft.Storage", "Microsoft.Sql"] #,
-    # subnet3 = ["Microsoft.AzureActiveDirectory"]
+    "${var.db_subnet_name}" = ["Microsoft.Storage", "Microsoft.Sql"] #,
+   
+  }
+
+  nsg_ids = {
+    "${var.web_subnet_name}" = "${azurerm_network_security_group.app_subnet_nsg.id}"
+    "${var.bastion_subnet_name}" = "${azurerm_network_security_group.bastion_subnet_nsg.id}"
   }
   tags = {
     environment = "${local.environment}"
@@ -40,32 +43,34 @@ module "vnet" {
   depends_on = [azurerm_resource_group.ojs_rg]   
   
 }
-# Create a public IP
-resource "azurerm_public_ip" "ojs_public_ip" {
-  name                = "ojs-public-ip"
-  location            = azurerm_resource_group.ojs_rg.location
-  resource_group_name = azurerm_resource_group.ojs_rg.name
-  allocation_method   = "Dynamic"
-}
+
+# if you need internet fronting for ojs vm, then uncomment the code below
+# # Create a public IP
+# resource "azurerm_public_ip" "ojs_public_ip" {
+#   name                = "ojs-public-ip"
+#   location            = azurerm_resource_group.ojs_rg.location
+#   resource_group_name = azurerm_resource_group.ojs_rg.name
+#   allocation_method   = "Dynamic"
+# }
 
 # Create a network security group and rule
-resource "azurerm_network_security_group" "ojs_nsg" {
-  name                = "ojs-nsg"
-  location            = azurerm_resource_group.ojs_rg.location
-  resource_group_name = azurerm_resource_group.ojs_rg.name
+# resource "azurerm_network_security_group" "ojs_nsg" {
+#   name                = "ojs-nsg"
+#   location            = azurerm_resource_group.ojs_rg.location
+#   resource_group_name = azurerm_resource_group.ojs_rg.name
 
-  security_rule {
-    name                       = "HTTP"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-}
+#   security_rule {
+#     name                       = "HTTP"
+#     priority                   = 1001
+#     direction                  = "Inbound"
+#     access                     = "Allow"
+#     protocol                   = "Tcp"
+#     source_port_range          = "*"
+#     destination_port_range     = "80"
+#     source_address_prefix      = "*"
+#     destination_address_prefix = "*"
+#   }
+# }
 
 # Create a network interface
 # resource "azurerm_network_interface" "ojs_nic" {
@@ -88,9 +93,11 @@ resource "azurerm_network_interface" "ojs_nic" {
 
   ip_configuration {
     name                          = "ojs-nic-config"
-    subnet_id                     = module.vnet.vnet_subnets[0]
+    #might need to update index if adding more subnets bc alphabetical
+    subnet_id                     = module.vnet.vnet_subnets[3]
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.ojs_public_ip.id
+    # uncomment the following code to allow public ip assocaition to nic
+    # public_ip_address_id          = azurerm_public_ip.ojs_public_ip.id
   }
 }
 
