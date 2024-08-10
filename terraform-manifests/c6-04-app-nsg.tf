@@ -3,16 +3,6 @@ resource "azurerm_network_security_group" "app_subnet_nsg" {
   location            = azurerm_resource_group.ojs_rg.location
   resource_group_name = azurerm_resource_group.ojs_rg.name
 }
-
-# Resource-3: Associate NSG and Subnet
-resource "azurerm_subnet_network_security_group_association" "app_subnet_nsg_associate" {
-  depends_on = [ azurerm_network_security_rule.app_nsg_rule_inbound]  
-  subnet_id                 = module.vnet.vnet_subnets[0]
-  network_security_group_id = azurerm_network_security_group.app_subnet_nsg.id
-}
-
-# Resource-4: Create NSG Rules
-## Locals Block for Security Rules
 locals {
   app_inbound_ports_map = {
     "100" : "80",
