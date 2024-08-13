@@ -79,10 +79,18 @@ resource "azurerm_linux_virtual_machine" "ojs_vm" {
 
     echo "Updating database configuration in config.inc.php..."
     sed -i 's/driver = mysql/driver = mysqli/' config.inc.php
-    sed -i 's/host = localhost/host = ${azurerm_mysql_flexible_server.ojs_db.name}/' config.inc.php
+    sed -i 's/host = localhost/host = ${azurerm_mysql_flexible_server.ojs_server.name}/' config.inc.php
     sed -i 's/username = ojs/username = ${var.mysql_db_username}/' config.inc.php
     sed -i 's/password = ojs/password = ${var.mysql_db_password}/' config.inc.php
     sed -i 's/name = ojs/name = ${var.mysql_db_name}/' config.inc.php
+
+    echo "connecting to database"
+    export DB_HOSTNAME=${azurerm_mysql_flexible_server.ojs_server.fqdn}
+    export DB_PORT=3306
+    export DB_NAME=${azurerm_mysql_flexible_database.ojs_db.name}
+    export DB_USERNAME="${azurerm_mysql_flexible_server.ojs_server.administrator_login}@${azurerm_mysql_flexible_server.ojs_server.fqdn}"
+    export DB_PASSWORD=${azurerm_mysql_flexible_server.ojs_server.administrator_password}
+
 
     echo "Setting ownership and permissions for cache directory..."
     sudo chown -R www-data:www-data /var/www/html/cache
