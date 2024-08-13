@@ -1,3 +1,20 @@
+# custom data to booststrap the bastion host vm
+locals {
+bastion_host_custom_data = <<CUSTOM_DATA
+#!/bin/sh
+#sudo yum update -y
+sudo yum -y install telnet
+sudo yum -y install mysql
+sudo yum install -y httpd
+sudo systemctl enable httpd
+sudo systemctl start httpd  
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+sudo yum install -y telnet
+sudo chmod -R 777 /var/www/html 
+sudo echo "Welcome to stacksimplify - Bastion Host - VM Hostname: $(hostname)" > /var/www/html/index.html
+CUSTOM_DATA  
+}
 # Creating a public IP address for bastion host vm
 resource "azurerm_public_ip" "bastion_public_ip" {
   name                = "${local.bastion_host}-pip"
@@ -44,5 +61,7 @@ resource "azurerm_linux_virtual_machine" "bastion_host_linuxvm" {
         version = "latest"
     }
     
+    custom_data = base64encode(local.bastion_host_custom_data)  
+
     # depends_on = [azurerm_network_interface.bastion_host_linuxvm_nic]
 }
