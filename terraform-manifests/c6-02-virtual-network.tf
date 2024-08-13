@@ -25,10 +25,12 @@ module "vnet" {
   resource_group_name = azurerm_resource_group.ojs_rg.name
   address_space       = var.vnet_address_space
   subnet_prefixes     = [var.web_subnet_address[0], var.app_subnet_address[0], var.db_subnet_address[0], var.bastion_subnet_address[0]]
-  # not sure why but sorted in alphabetical order
+  # not sure why but sorted in alphabetical order (stored as app, bastion, db, web)
   subnet_names        = [var.web_subnet_name, var.app_subnet_name, var.db_subnet_name, var.bastion_subnet_name]
   subnet_service_endpoints = {
-    "${var.db_subnet_name}" = ["Microsoft.Storage", "Microsoft.Sql"] #,
+    "${var.db_subnet_name}" = ["Microsoft.Storage", "Microsoft.Sql"],
+    #"${var.app_subnet_name}" = ["Microsoft.Storage", "Microsoft.Sql"],
+    "${var.web_subnet_name}" = ["Microsoft.Storage", "Microsoft.Sql"]
    
   }
 
