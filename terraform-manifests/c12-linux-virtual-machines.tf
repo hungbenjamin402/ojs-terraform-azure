@@ -74,19 +74,32 @@ resource "azurerm_linux_virtual_machine" "ojs_vm" {
     echo "Changing ownership of /var/www/html to the current user..."
     sudo chown -R $(whoami) /var/www/html
 
+    echo "Creating upload_files directory..."
+    sudo mkdir upload_files
+
     echo "Copying the configuration template..."
     cp config.TEMPLATE.inc.php config.inc.php
 
     echo "Updating database configuration in config.inc.php..."
-    sed -i 's/driver = mysql/driver = mysqli/' config.inc.php
-    sed -i 's/host = localhost/host = ${azurerm_mysql_flexible_server.ojs_db.name}/' config.inc.php
+    sed -i 's/driver = mysqli/driver = mysql/' config.inc.php
+    sed -i 's/host = localhost/host = ${azurerm_mysql_flexible_server.ojs_db.name}.mysql.database.azure.com/' config.inc.php
     sed -i 's/username = ojs/username = ${var.mysql_db_username}/' config.inc.php
     sed -i 's/password = ojs/password = ${var.mysql_db_password}/' config.inc.php
-    sed -i 's/name = ojs/name = ${var.mysql_db_name}/' config.inc.php
+    sed -i 's/name = ojs/name = ${azurerm_mysql_flexible_database.ojs_db.name}/' config.inc.php
+    sed -i 's/; port = 3306/port = 3306/' config.inc.php
 
     echo "Setting ownership and permissions for cache directory..."
     sudo chown -R www-data:www-data /var/www/html/cache
     sudo chmod -R 755 /var/www/html/cache
+
+    echo "Setting ownership and permissions for upload_files directory..."
+    sudo chmod -R 777 /var/www/html/upload_files
+
+    echo "Setting ownership and permissions for public directory..."
+    sudo chmod -R 777 /var/www/html/public
+
+    echo "Setting writing permission to "config.inc.php"..."
+    sudo chmod -R 777 config.inc.php
 
     echo "Restarting Apache..."
     sudo systemctl restart apache2

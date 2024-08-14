@@ -1,6 +1,6 @@
 # Resource-1: Azure MySQL Flexible Server
 resource "azurerm_mysql_flexible_server" "ojs_db" {
-  name                   = "ojs-mysqlserver"
+  name                   = "ojs-mysqlserver-unique"
   resource_group_name    = azurerm_resource_group.ojs_rg.name
   location               = azurerm_resource_group.ojs_rg.location
   administrator_login    = var.mysql_db_username
@@ -8,6 +8,13 @@ resource "azurerm_mysql_flexible_server" "ojs_db" {
   sku_name               = "B_Standard_B4ms"
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
+}
+
+resource "azurerm_mysql_flexible_server_configuration" "require_secure_transport_server_off" {
+  name                = "require_secure_transport"
+  resource_group_name = azurerm_resource_group.ojs_rg.name
+  server_name         = azurerm_mysql_flexible_server.ojs_db.name
+  value               = "OFF"
 }
 
 # Resource-2: Azure MySQL Database / Schema
