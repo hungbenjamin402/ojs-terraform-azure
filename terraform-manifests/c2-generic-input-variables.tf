@@ -19,3 +19,13 @@ variable "resource_group_location" {
   default = "West US" 
 }
 
+#admin ojs password
+variable "ojs_admin_password" {
+  description = "admin password for ojs"
+  type        = string
+  sensitive   = true
+}
+variable "ojs_admin_user" {
+  description = "admin username for ojs"
+  type        = string
+}
