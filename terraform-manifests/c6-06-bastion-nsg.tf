@@ -1,4 +1,4 @@
-# resource 1: Create Bastion / Management Subnet and resource 3:  Associate NSG and Subnet done with vnet module
+# resource 1: Create Bastion / Management Subnet and resource 3: Associate NSG and Subnet done with vnet module
 
 # Resource-2: Create Network Security Group (NSG)
 resource "azurerm_network_security_group" "bastion_subnet_nsg" {
@@ -13,7 +13,8 @@ resource "azurerm_network_security_group" "bastion_subnet_nsg" {
 locals {
   bastion_inbound_ports_map = {
     "100" : "22", # If the key starts with a number, you must use the colon syntax ":" instead of "="
-    "110" : "3389"
+    "110" : "3389",
+    # "120" : "3306" # might not need
   } 
 }
 ## NSG Inbound Rule for Bastion / Management Subnets
