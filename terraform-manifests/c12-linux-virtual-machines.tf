@@ -47,6 +47,9 @@ resource "azurerm_linux_virtual_machine" "ojs_vm" {
     sudo npm install -g n
     sudo n stable
 
+    echo "installing expect program for install script"
+    sudo apt install expect -y
+
     echo "Changing directory to /var/www/html/..."
     cd /var/www/html/
 
@@ -56,6 +59,7 @@ resource "azurerm_linux_virtual_machine" "ojs_vm" {
     echo "Cloning the OJS repository..."
     sudo git clone https://github.com/pkp/ojs --recurse-submodules -b stable-3_4_0 /var/www/html
 
+ 
     echo "Installing dependencies for lib/pkp..."
     yes | sudo composer --working-dir=lib/pkp install
 
@@ -74,28 +78,76 @@ resource "azurerm_linux_virtual_machine" "ojs_vm" {
     echo "Changing ownership of /var/www/html to the current user..."
     sudo chown -R $(whoami) /var/www/html
 
+    #not sure if this used based on cloud-init-output.log
     echo "Copying the configuration template..."
     cp config.TEMPLATE.inc.php config.inc.php
-
-    echo "Updating database configuration in config.inc.php..."
-    sed -i 's/driver = mysql/driver = mysqli/' config.inc.php
-    sed -i 's/host = localhost/host = ${azurerm_mysql_flexible_server.ojs_server.name}/' config.inc.php
-    sed -i 's/username = ojs/username = ${var.mysql_db_username}/' config.inc.php
-    sed -i 's/password = ojs/password = ${var.mysql_db_password}/' config.inc.php
-    sed -i 's/name = ojs/name = ${var.mysql_db_name}/' config.inc.php
 
     echo "connecting to database"
     export DB_HOSTNAME=${azurerm_mysql_flexible_server.ojs_server.fqdn}
     export DB_PORT=3306
     export DB_NAME=${azurerm_mysql_flexible_database.ojs_db.name}
-    export DB_USERNAME="${azurerm_mysql_flexible_server.ojs_server.administrator_login}@${azurerm_mysql_flexible_server.ojs_server.fqdn}"
+    export DB_USERNAME=${azurerm_mysql_flexible_server.ojs_server.administrator_login}
     export DB_PASSWORD=${azurerm_mysql_flexible_server.ojs_server.administrator_password}
-
-
+   
     echo "Setting ownership and permissions for cache directory..."
     sudo chown -R www-data:www-data /var/www/html/cache
     sudo chmod -R 755 /var/www/html/cache
 
+    echo "Making upload files dir"
+    mkdir /home/adminuser/ojs-file-uploads
+    chmod 777 /home/adminuser/ojs-file-uploads
+    chmod -R 777 /var/www/html/public
+    chmod 777 /var/www/html/config.inc.php
+
+    # install ojs with expect script
+    expect <<'END_EXPECT'
+    set script_path /var/www/html/tools/install.php
+    #launch script
+    spawn php $script_path
+    expect "Select (en):"
+    send -- "en\r"
+    expect "Select (None):"
+    send -- "\r"
+    expect "Directory for uploads:"
+    send -- "/home/adminuser/ojs-file-uploads\r"
+    #admin account
+    expect "Username:"
+    send -- "${var.ojs_admin_user}\r"
+    expect "Password:"
+    send -- "${var.ojs_admin_password}\r"
+    expect "Repeat password:"
+    send -- "${var.ojs_admin_password}\r"
+    expect "Email:"
+    send -- "testojsemail@gmail.com\r"
+    expect "Select:"
+    send -- "mysqli\r"
+    expect "Host (None):"
+    send -- "${azurerm_mysql_flexible_server.ojs_server.fqdn}\r"
+    expect "Username (None):"
+    send -- "${azurerm_mysql_flexible_server.ojs_server.administrator_login}\r"
+    expect "Password (None):"
+    send -- "${azurerm_mysql_flexible_server.ojs_server.administrator_password}\r"
+    expect "Database name:"
+    send -- "${azurerm_mysql_flexible_database.ojs_db.name}\r"
+    expect "Repository Identifier:"
+    send -- "ojs2-test\r"
+    expect "Provide a unique site ID and OAI base URL to PKP for statistics and security alert purposes only."
+    send -- "Y\r"
+    expect "*** Install Open Journal Systems"
+    send -- "y\r"
+    sleep 200
+    expect eof
+    END_EXPECT
+    
+    chmod 777 /var/www/html/config.inc.php
+  
+    ip_address="${azurerm_public_ip.web_lbpublicip.ip_address}"
+    sudo sed -i "/allowed_hosts = \"/c\allowed_hosts = \"[\\\\\"$ip_address\\\\\"]\"" config.inc.php
+
+    # again 
+    echo "again, Setting ownership and permissions for cache directory..."
+    sudo chown -R www-data:www-data /var/www/html/cache
+    sudo chmod -R 755 /var/www/html/cache
     echo "Restarting Apache..."
     sudo systemctl restart apache2
 
