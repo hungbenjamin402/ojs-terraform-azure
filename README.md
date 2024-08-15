@@ -12,6 +12,7 @@
 
 ## other stuff to implement
 ### update ssh keys so diff than ones used in course
+### fix firewall rules and other security stuff
 ### domains/dns stuff -> might cost money
 ### ssl cert and https redirect (only with autoscaling/ag? not sure)
 ### scaling and app gateway?
