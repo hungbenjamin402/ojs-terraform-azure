@@ -16,3 +16,5 @@ db_subnet_address = ["10.1.21.0/24"]
 bastion_subnet_name = "bastion-subnet"
 bastion_subnet_address = ["10.1.100.0/24"]
 bastion_vm = "bastion-host-linuxvm"
+
+ojs_admin_user = "admin"
