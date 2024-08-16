@@ -21,14 +21,33 @@ resource "azurerm_mysql_flexible_database" "ojs_db" {
   collation           = "utf8_unicode_ci"
 }
 
-# Resource-3: Azure MySQL Flexible Server Firewall Rule
-resource "azurerm_mysql_flexible_server_firewall_rule" "ojs_fw_rule" {
-  name                = "AllowAllAzureIPs"
+# # Resource-3: Azure MySQL Flexible Server Firewall Rule
+# resource "azurerm_mysql_flexible_server_firewall_rule" "ojs_fw_rule" {
+#   name                = "AllowAllAzureIPs"
+#   resource_group_name = azurerm_resource_group.ojs_rg.name
+#   server_name         = azurerm_mysql_flexible_server.ojs_server.name
+#   start_ip_address    = "0.0.0.0"
+#   end_ip_address      = "255.255.255.255"
+#}
+
+ # firewall rule to allow bastion host
+resource "azurerm_mysql_flexible_server_firewall_rule" "ojs_fw_bastion_rule" {
+  name                = "AllowBastionIPs"
   resource_group_name = azurerm_resource_group.ojs_rg.name
   server_name         = azurerm_mysql_flexible_server.ojs_server.name
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "255.255.255.255"
+  start_ip_address    = azurerm_public_ip.bastion_public_ip.ip_address
+  end_ip_address      = azurerm_public_ip.bastion_public_ip.ip_address
 }
+
+ # firewall rule to allow web vm
+resource "azurerm_mysql_flexible_server_firewall_rule" "ojs_fw_web_rule" {
+  name                = "AllowWebIP"
+  resource_group_name = azurerm_resource_group.ojs_rg.name
+  server_name         = azurerm_mysql_flexible_server.ojs_server.name
+  start_ip_address    = azurerm_network_interface.ojs_nic.private_ip_address
+  end_ip_address      = azurerm_network_interface.ojs_nic.private_ip_address
+}
+
 
 resource "azurerm_mysql_flexible_server_configuration" "ojs_server_ssl_config" {
   resource_group_name = azurerm_resource_group.ojs_rg.name
