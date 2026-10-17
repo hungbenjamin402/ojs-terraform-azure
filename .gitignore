@@ -1,0 +1,8 @@
+# Secrets and local state: never commit these
+terraform-manifests/secrets.tfvars
+terraform-manifests/ssh-keys/
+*.pem
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfplan

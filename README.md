@@ -50,7 +50,7 @@ terraform destroy -var-file=secrets.tfvars -auto-approve
 2. Use the following default credentials to log in to the OJS instance:
 
    - **Username**: `admin`
-   - **Password**: `REDACTED_PASSWORD`
+   - **Password**: the value of `ojs_admin_password` you set in `terraform-manifests/secrets.tfvars` (copy `secrets.tfvars.example` and fill it in)
 
 ### Manual Changes
 
